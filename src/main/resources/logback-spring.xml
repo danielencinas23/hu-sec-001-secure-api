@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Propaga los niveles de Logback a java.util.logging (que usa Tomcat internamente) -->
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <property name="SECURITY_LOG_DIR" value="${SECURITY_LOG_DIR:-logs}"/>
+
+    <!-- Fichero de auditoría de seguridad: logins, 401, 403, peticiones HTTP rechazadas y fallos TLS -->
+    <appender name="SECURITY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${SECURITY_LOG_DIR}/security-audit.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${SECURITY_LOG_DIR}/security-audit.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Traduce los fallos de handshake de Tomcat a mensajes personalizados en SECURITY_AUDIT -->
+    <appender name="TLS_HANDSHAKE" class="com.dwi.secureapi.logging.TlsHandshakeFailureAppender"/>
+
+    <logger name="SECURITY_AUDIT" level="INFO">
+        <appender-ref ref="SECURITY_FILE"/>
+    </logger>
+
+    <logger name="org.apache.tomcat.util.net.NioEndpoint.handshake" level="DEBUG" additivity="false">
+        <appender-ref ref="TLS_HANDSHAKE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
