@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "HU-SEC-001 Secure API",
+    "description": "Pruebas de autenticación JWT y TLS. Antes de ejecutar: Settings > Certificates > CA Certificates -> certs/secure-api.crt (o desactivar 'SSL certificate verification' solo en local).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:8443" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. TLS info (público)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/public/tls-info" }
+    },
+    {
+      "name": "2. /me sin token -> 401",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('401', () => pm.response.to.have.status(401));"] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/users/me" }
+    },
+    {
+      "name": "3. Login user -> token",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('token', pm.response.json().access_token);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/login",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"user\",\"password\":\"user123\"}" }
+      }
+    },
+    {
+      "name": "4. /me con token -> 200",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/me",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }
+      }
+    },
+    {
+      "name": "5. /admin con rol USER -> 403",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('403', () => pm.response.to.have.status(403));"] } }],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/admin/stats",
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }
+      }
+    },
+    {
+      "name": "6. Login con contraseña incorrecta -> 401",
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('401', () => pm.response.to.have.status(401));"] } }],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/login",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"user\",\"password\":\"incorrecta\"}" }
+      }
+    }
+  ]
+}
