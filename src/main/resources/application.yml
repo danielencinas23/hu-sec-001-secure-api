@@ -32,3 +32,19 @@ app:
     # Conector HTTP plano: GET/HEAD se redirigen a HTTPS (301) y el resto se rechaza (400).
     # Usa -1 para no abrir ningún puerto HTTP.
     http-port: ${HTTP_PORT:8080}
+  security:
+    jwt:
+      # Secreto HMAC-SHA256 (mínimo 32 bytes). En producción defínelo SIEMPRE con la variable JWT_SECRET.
+      secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789abcdef}
+      issuer: secure-api
+      expiration: 30m
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:https://localhost:4200,http://localhost:4200}
+    # Usuarios de demostración para el entorno local (las contraseñas se cifran con BCrypt al arrancar)
+    users:
+      - username: user
+        password: ${DEMO_USER_PASSWORD:user123}
+        roles: [USER]
+      - username: admin
+        password: ${DEMO_ADMIN_PASSWORD:admin123}
+        roles: [USER, ADMIN]
